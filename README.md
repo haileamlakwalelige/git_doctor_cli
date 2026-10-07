@@ -42,8 +42,10 @@ Everything runs **locally**. No server, no telemetry, and your repository never 
 ## Install
 
 ```bash
-npm install -g git-doctor
+npm install -g git-doctor-cli
 ```
+
+The package is `git-doctor-cli`; the command it installs is `git-doctor`.
 
 Requires Node.js 20+ and `git` on your PATH.
 
@@ -85,7 +87,7 @@ git-doctor --list-checks   # what can be checked
 This makes it usable as a CI gate:
 
 ```yaml
-- run: npx git-doctor --fail-on high
+- run: npx git-doctor-cli --fail-on high
 ```
 
 ## Ignoring findings you accept
@@ -132,7 +134,7 @@ all output — text and JSON — so reports are safe to share.
 ## Use it as a library
 
 ```ts
-import { diagnose, renderText } from 'git-doctor';
+import { diagnose, renderText } from 'git-doctor-cli';
 
 const report = await diagnose('/path/to/repo', { maxFileSizeMB: 100 });
 console.log(renderText(report, { color: true, verbose: false }));
