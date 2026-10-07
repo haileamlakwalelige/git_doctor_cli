@@ -1,5 +1,7 @@
 # Git Doctor
 
+![Git Doctor](docs/assets/logo.svg)
+
 **Diagnose broken and confusing Git repositories.** Like ESLint for your Git repo.
 
 `git-doctor` inspects a repository and reports what is wrong — with concrete commands to fix it.
@@ -31,7 +33,11 @@ Recommended actions
 8 findings (1 critical, 2 high, 2 medium, 1 low, 2 info) from 10 checks in 1.62s
 ```
 
+![Sample report](docs/assets/hero.svg)
+
 Everything runs **locally**. No server, no telemetry, and your repository never leaves your machine.
+
+![Security](docs/assets/security.svg)
 
 ## Install
 
