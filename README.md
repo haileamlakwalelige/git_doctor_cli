@@ -4,7 +4,7 @@
 
 **Diagnose broken and confusing Git repositories.** Like ESLint for your Git repo.
 
-`git-doctor` inspects a repository and reports what is wrong — with concrete commands to fix it.
+`git-doctor-cli` inspects a repository and reports what is wrong — with concrete commands to fix it.
 
 ```
 Git Doctor v0.1.0
@@ -45,18 +45,18 @@ Everything runs **locally**. No server, no telemetry, and your repository never 
 npm install -g git-doctor-cli
 ```
 
-The package is `git-doctor-cli`; the command it installs is `git-doctor`.
+The package installs the `git-doctor-cli` command, with `git-doctor` as a short alias.
 
 Requires Node.js 20+ and `git` on your PATH.
 
 ## Usage
 
 ```bash
-git-doctor                 # inspect the repository in the current directory
-git-doctor path/to/repo    # inspect another repository
-git-doctor --json          # machine-readable report (for CI)
-git-doctor -v              # also show the checks that passed
-git-doctor --list-checks   # what can be checked
+git-doctor-cli               # inspect the repository in the current directory
+git-doctor-cli path/to/repo  # inspect another repository
+git-doctor-cli --json        # machine-readable report (for CI)
+git-doctor-cli -v            # also show the checks that passed
+git-doctor-cli --list-checks # what can be checked
 ```
 
 ### Options
@@ -129,7 +129,7 @@ another file. The library equivalent is `diagnose(path, { ignore: [...] })`.
 Every finding comes with concrete commands to run. Secret values are redacted in
 all output — text and JSON — so reports are safe to share.
 
-`git-doctor` is **read-only**: it never modifies your repository.
+`git-doctor-cli` is **read-only**: it never modifies your repository.
 
 ## Use it as a library
 
@@ -156,7 +156,7 @@ reports.
 
 ## Roadmap
 
-- `git-doctor fix --safe` — apply only reversible fixes, behind a backup ref
+- `git-doctor-cli fix --safe` — apply only reversible fixes, behind a backup ref
 - pre-commit / CI reporters and a `--fail-on` profile per team
 - Homebrew, Scoop and Winget packages
 - VS Code extension and a documentation site

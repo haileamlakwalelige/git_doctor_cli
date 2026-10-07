@@ -799,7 +799,7 @@ code:not(pre code){
         <span class="shead__no" aria-hidden="true">01</span>
         <div class="shead__body">
           <h2 id="checks-title">The 10 checks</h2>
-          <p class="shead__sub">All ten run by default. <code>git-doctor --list-checks</code> prints this sheet from any checkout.</p>
+          <p class="shead__sub">All ten run by default. <code>git-doctor-cli --list-checks</code> prints this sheet from any checkout.</p>
         </div>
       </header>
 
@@ -873,7 +873,7 @@ code:not(pre code){
           <span class="sev-stamp"><span aria-hidden="true">ℹ</span> info</span>
         </li>
       </ol>
-      <p class="sheet__foot">* Stamp shows the highest severity the check can report. Descriptions verbatim from <code>git-doctor --list-checks</code>.</p>
+      <p class="sheet__foot">* Stamp shows the highest severity the check can report. Descriptions verbatim from <code>git-doctor-cli --list-checks</code>.</p>
     </div>
   </section>
 
@@ -943,7 +943,7 @@ code:not(pre code){
         <div>
           <h3>Exit codes</h3>
           <table class="codes">
-            <caption class="visually-hidden">git-doctor exit codes and their meanings</caption>
+            <caption class="visually-hidden">git-doctor-cli exit codes and their meanings</caption>
             <thead>
               <tr><th scope="col">Code</th><th scope="col">Meaning</th></tr>
             </thead>
@@ -995,12 +995,12 @@ code:not(pre code){
 
       <div class="term usage__term">
         <div class="term__bar"><span>terminal</span><span>bash</span></div>
-        <pre class="term__pre"><span class="prompt">$</span> git-doctor path/to/repo --fail-on high
+        <pre class="term__pre"><span class="prompt">$</span> git-doctor-cli path/to/repo --fail-on high
 <span class="term__out">2 findings (1 medium, 1 info) from 10 checks in 2.08s</span>
 
-<span class="prompt">$</span> git-doctor --json | jq '.findings[].severity'
+<span class="prompt">$</span> git-doctor-cli --json | jq '.findings[].severity'
 
-<span class="prompt">$</span> git-doctor --checks secrets,large-files --history 0</pre>
+<span class="prompt">$</span> git-doctor-cli --checks secrets,large-files --history 0</pre>
       </div>
 
       <div class="usage__grid">

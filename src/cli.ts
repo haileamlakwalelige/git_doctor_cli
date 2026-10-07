@@ -61,7 +61,7 @@ async function main(): Promise<number> {
   const program = new Command();
 
   program
-    .name('git-doctor')
+    .name('git-doctor-cli')
     .description('Diagnose broken and confusing Git repositories. Like ESLint for your Git repo.')
     .version(VERSION)
     .argument('[path]', 'path to the repository to inspect', '.')
@@ -143,11 +143,11 @@ main()
   })
   .catch((error: unknown) => {
     if (error instanceof GitDoctorError) {
-      process.stderr.write(paintError('git-doctor: ') + error.message + '\n');
+      process.stderr.write(paintError('git-doctor-cli: ') + error.message + '\n');
       process.exitCode = error.exitCode;
       return;
     }
     const message = error instanceof Error ? error.message : String(error);
-    process.stderr.write(paintError('git-doctor: ') + message + '\n');
+    process.stderr.write(paintError('git-doctor-cli: ') + message + '\n');
     process.exitCode = 2;
   });
