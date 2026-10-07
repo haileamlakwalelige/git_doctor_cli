@@ -2,13 +2,13 @@
   "name": "git-doctor-cli",
   "version": "0.1.1",
   "description": "Diagnose broken and confusing Git repositories. Like ESLint for your Git repo.",
-  "homepage": "https://haileamlakwalelige.github.io/git_doctor/",
+  "homepage": "https://haileamlakwalelige.github.io/git_doctor_cli/",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/haileamlakwalelige/git_doctor.git"
+    "url": "git+https://github.com/haileamlakwalelige/git_doctor_cli.git"
   },
   "bugs": {
-    "url": "https://github.com/haileamlakwalelige/git_doctor/issues"
+    "url": "https://github.com/haileamlakwalelige/git_doctor_cli/issues"
   },
   "keywords": [
     "git",
