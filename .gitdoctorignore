@@ -1,0 +1,3 @@
+# Git Doctor's own tests contain realistic-looking fake credentials on purpose
+# so the scanner has something to catch. Ignore them when checking this repo.
+secrets:test/**

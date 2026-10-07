@@ -2,18 +2,18 @@
 
 **Diagnose broken and confusing Git repositories.** Like ESLint for your Git repo.
 
-`git-doctor` inspects a repository and tells you what is wrong — and exactly how to fix it.
+`git-doctor` inspects a repository and reports what is wrong — with concrete commands to fix it.
 
 ```
 Git Doctor v0.1.0
 C:\projects\my-app (branch main, c9ec4ab2)
 
   ✖ 1 secret detected in previous commits
-      - GitHub token: ghp_ab****** (38 chars) (first in 2c544284, src/config.js)
-      Scanned the last 4 commits.
+       - GitHub token: ghp_ab****** (38 chars) (first in 2c544284, src/config.js)
+       Scanned the last 4 commits.
   ▲ 1 dangling commit found
-      Sample: fb0bbf74
-      These commits are unreachable from every branch; reflogs normally keep them alive for about 90 days.
+       Sample: fb0bbf74
+       These commits are unreachable from every branch; reflogs normally keep them alive for about 90 days.
   ▲ 1 tracked file is also matched by .gitignore
   ⚠ 1 branch contains unmerged work
   • Branch 'main' has no upstream
@@ -61,6 +61,8 @@ git-doctor --list-checks   # what can be checked
 | `--max-file-size <mb>` | `50` | flag files larger than this anywhere in history |
 | `--stale-days <n>` | `90` | age before a merged branch counts as stale |
 | `--fail-on <level>` | `high` | severity that makes the command exit `1` |
+| `--ignore-file <path>` | `<repo>/.gitdoctorignore` | file with ignore rules |
+| `--no-ignore` | | do not read `.gitdoctorignore` |
 | `--json` | | print a JSON report |
 | `-v, --verbose` | | include passing checks |
 | `-q, --quiet` | | no output, exit code only |
@@ -79,6 +81,27 @@ This makes it usable as a CI gate:
 ```yaml
 - run: npx git-doctor --fail-on high
 ```
+
+## Ignoring findings you accept
+
+Some findings are deliberate — test fixtures with fake tokens, an internal repo
+with no remote, a project that is fine being dirty. Record them in
+`.gitdoctorignore` at the repository root and they stop affecting the exit code
+(they are still counted and reported as hidden):
+
+```
+# comments and blank lines are fine
+test/**              # any check: matching paths
+secrets              # every finding of one check
+secrets:test/**      # one check: matching paths
+```
+
+Patterns are globs: `*` stays inside one path segment, `**` crosses
+directories, `?` matches one character. Paths are matched against every path,
+branch and value a finding carries (`.env`, `assets/big.psd`, `main`, …).
+
+Use `--no-ignore` to see everything, or `--ignore-file <path>` to point at
+another file. The library equivalent is `diagnose(path, { ignore: [...] })`.
 
 ## Checks
 

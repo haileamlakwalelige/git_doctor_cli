@@ -35,7 +35,7 @@ export const SECRET_PATTERNS: SecretPattern[] = [
     id: 'generic-credential',
     label: 'possible embedded credential',
     severity: 'medium',
-    regex: /\b(?:api[_-]?key|apikey|secret|password|passwd|pwd|token|access[_-]?key|client[_-]?secret|auth[_-]?token|credential)s?\b\s*[:=]\s*(?:"([^"]{8,})"|'([^']{8,})'|([^\s"'`]{8,}))/gi,
+    regex: /(?<![A-Za-z0-9])(?:api[_-]?key|apikey|secret|password|passwd|pwd|token|access[_-]?key|client[_-]?secret|auth[_-]?token|credential)s?\b\s*[:=]\s*(?:"([^"]{8,})"|'([^']{8,})'|([^\s"'`]{8,}))/gi,
   },
 ];
 
@@ -66,18 +66,29 @@ export function redact(value: string): string {
   return trimmed.slice(0, 6) + '*'.repeat(6) + ' (' + trimmed.length + ' chars)';
 }
 
+const CODE_LIKE = /[();,.]/;
+
+function isPlausibleCredential(raw: string, quoted: boolean): boolean {
+  if (raw.length < 8 || FAKE_VALUE.test(raw)) return false;
+  if (quoted) return true;
+  if (CODE_LIKE.test(raw)) return false;
+  return /\d/.test(raw);
+}
+
 export function matchSecrets(line: string): SecretMatch[] {
   const matches: SecretMatch[] = [];
   for (const pattern of SECRET_PATTERNS) {
     pattern.regex.lastIndex = 0;
     let match: RegExpExecArray | null;
     while ((match = pattern.regex.exec(line)) !== null) {
-      const raw =
-        pattern.id === 'generic-credential'
-          ? (match[1] ?? match[2] ?? match[3] ?? '')
-          : match[0];
-      if (raw.length > 0 && (pattern.id !== 'generic-credential' || !FAKE_VALUE.test(raw))) {
-        matches.push({ pattern, value: raw });
+      if (pattern.id === 'generic-credential') {
+        const quoted = match[1] !== undefined || match[2] !== undefined;
+        const raw = (match[1] ?? match[2] ?? match[3] ?? '').replace(/[;,]+$/, '');
+        if (isPlausibleCredential(raw, quoted)) {
+          matches.push({ pattern, value: raw });
+        }
+      } else if (match[0].length > 0) {
+        matches.push({ pattern, value: match[0] });
       }
       if (match.index === pattern.regex.lastIndex) pattern.regex.lastIndex += 1;
     }

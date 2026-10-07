@@ -11,23 +11,17 @@ import type {
 import { SEVERITY_RANK } from './types.js';
 import { runGit } from './git.js';
 import { ALL_CHECKS } from './checks/index.js';
+import { isIgnored, loadIgnoreRules } from './ignore.js';
+import { GitDoctorError } from './errors.js';
 import { VERSION } from './version.js';
+
+export { GitDoctorError } from './errors.js';
 
 export const DEFAULT_OPTIONS: ResolvedOptions = {
   history: 200,
   maxFileSizeMB: 50,
   staleDays: 90,
 };
-
-export class GitDoctorError extends Error {
-  readonly exitCode: number;
-
-  constructor(message: string, exitCode = 2) {
-    super(message);
-    this.name = 'GitDoctorError';
-    this.exitCode = exitCode;
-  }
-}
 
 function selectChecks(options: DiagnoseOptions) {
   let selected = ALL_CHECKS;
@@ -141,6 +135,21 @@ export async function diagnose(
     }),
   );
 
+  const ignore = loadIgnoreRules(target, options);
+  let ignoredCount = 0;
+  for (const result of results) {
+    if (result.findings.length === 0) continue;
+    const kept = result.findings.filter((finding) => {
+      if (!isIgnored(finding, result.check, ignore.rules)) return true;
+      ignoredCount++;
+      return false;
+    });
+    if (kept.length !== result.findings.length) {
+      result.findings = kept;
+      if (result.status === 'findings') result.status = 'ok';
+    }
+  }
+
   const order = new Map(selected.map((check, index) => [check.meta.id, index]));
   const pairs = results.flatMap((result) =>
     result.findings.map((finding) => ({ finding, checkId: result.check })),
@@ -161,6 +170,7 @@ export async function diagnose(
     head,
     checks: results,
     findings: pairs.map((pair) => pair.finding),
+    ignored: { count: ignoredCount, source: ignore.source },
     durationMs: Date.now() - startedAt,
   };
 }

@@ -48,6 +48,11 @@ export interface HeadInfo {
   detached: boolean;
 }
 
+export interface IgnoredInfo {
+  count: number;
+  source: string | null;
+}
+
 export interface Report {
   tool: 'git-doctor';
   version: string;
@@ -58,6 +63,7 @@ export interface Report {
   head: HeadInfo;
   checks: CheckResult[];
   findings: Finding[];
+  ignored?: IgnoredInfo;
   durationMs: number;
 }
 
@@ -67,6 +73,8 @@ export interface DiagnoseOptions {
   history?: number;
   maxFileSizeMB?: number;
   staleDays?: number;
+  ignore?: string[];
+  ignoreFile?: string | null;
 }
 
 export interface ResolvedOptions {

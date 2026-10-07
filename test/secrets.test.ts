@@ -40,6 +40,24 @@ describe('secret pattern matching', () => {
     expect(matchSecrets('git commit -m "password reset flow"')).toHaveLength(0);
   });
 
+  it('ignores type annotations, calls and bare identifiers (found on self-run)', () => {
+    expect(matchSecrets('const credential: UrlCredential | null = null;')).toHaveLength(0);
+    expect(matchSecrets('const credential = detectUrlCredential(url);')).toHaveLength(0);
+    expect(matchSecrets('secrets: secretData(critical),')).toHaveLength(0);
+  });
+
+  it('still flags unquoted credentials that look like secrets', () => {
+    expect(matchSecrets('AWS_SECRET=a1B2c3D4e5F6g7H8')).toHaveLength(1);
+    expect(matchSecrets('password = "hunter2hunter2"')).toHaveLength(1);
+    expect(matchSecrets('const password = hunter2hunter2;')).toHaveLength(1);
+  });
+
+  it('matches keyword after an underscore but not inside a word', () => {
+    expect(matchSecrets('DB_SECRET=x9K2mP4qR7sT')).toHaveLength(1);
+    expect(matchSecrets('const secretSanta = 1;')).toHaveLength(0);
+    expect(matchSecrets('const notasecret = 1;')).toHaveLength(0);
+  });
+
   it('pre-filters lines that cannot contain secrets', () => {
     expect(isCandidate('plain prose with no markers in it at all')).toBe(false);
     expect(isCandidate('const apiKey = "value1234567890"')).toBe(true);

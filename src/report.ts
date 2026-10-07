@@ -148,6 +148,20 @@ export function renderText(report: Report, options: RenderOptions): string {
     }
   }
 
+  const ignoredCount = report.ignored?.count ?? 0;
+  if (ignoredCount > 0) {
+    const source = report.ignored?.source ?? 'ignore rules';
+    lines.push(
+      '',
+      paint(
+        '  ' + ignoredCount + ' finding' + (ignoredCount === 1 ? '' : 's') +
+          ' hidden by ' + source + ' (--no-ignore to show them)',
+        pc.dim,
+        color,
+      ),
+    );
+  }
+
   if (failures.length > 0) {
     lines.push('', paint('Checks that failed', pc.bold, color));
     for (const failure of failures) {
