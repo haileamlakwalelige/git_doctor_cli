@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" width="800" height="360">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#818cf8"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <rect width="800" height="360" fill="url(#bg)" rx="16"/>
+
+  <g filter="url(#shadow)" transform="translate(40, 40)">
+    <rect width="720" height="280" rx="12" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+
+    <rect x="20" y="20" width="680" height="40" rx="8" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+    <text x="40" y="46" font-family="monospace" font-size="16" fill="#e2e8f0" font-weight="600">Git Doctor v0.1.0</text>
+    <text x="560" y="46" font-family="monospace" font-size="12" fill="#64748b">C:\projects\my-app (branch main, c9ec4ab2)</text>
+
+    <line x1="20" y1="72" x2="700" y2="72" stroke="#334155" stroke-width="1"/>
+
+    <g transform="translate(30, 90)">
+      <text font-family="monospace" font-size="13" font-weight="700" fill="#f87171" x="0" y="0">✖ 1 secret detected in previous commits</text>
+      <text font-family="monospace" font-size="12" fill="#94a3b8" x="14" y="20">- GitHub token: ghp_ab****** (38 chars) (first in 2c544284, src/config.js)</text>
+      <text font-family="monospace" font-size="12" fill="#64748b" x="14" y="38">Scanned the last 4 commits.</text>
+    </g>
+
+    <g transform="translate(30, 150)">
+      <text font-family="monospace" font-size="13" font-weight="700" fill="#fbbf24" x="0" y="0">▲ 1 dangling commit found</text>
+      <text font-family="monospace" font-size="12" fill="#94a3b8" x="14" y="20">Sample: fb0bbf74</text>
+      <text font-family="monospace" font-size="12" fill="#64748b" x="14" y="38">These commits are unreachable from every branch; reflogs normally keep them alive for about 90 days.</text>
+    </g>
+
+    <g transform="translate(30, 210)">
+      <text font-family="monospace" font-size="13" font-weight="700" fill="#fbbf24" x="0" y="0">▲ 1 tracked file is also matched by .gitignore</text>
+    </g>
+
+    <g transform="translate(30, 240)">
+      <text font-family="monospace" font-size="13" font-weight="700" fill="#fbbf24" x="0" y="0">⚠ 1 branch contains unmerged work</text>
+      <text font-family="monospace" font-size="12" fill="#94a3b8" x="14" y="20">• Branch 'main' has no upstream</text>
+    </g>
+
+    <line x1="20" y1="272" x2="700" y2="272" stroke="#334155" stroke-width="1"/>
+    <text x="30" y="295" font-family="monospace" font-size="12" fill="#94a3b8">8 findings (1 critical, 2 high, 2 medium, 1 low, 2 info) from 10 checks in 1.62s</text>
+  </g>
+
+  <text x="400" y="345" text-anchor="middle" font-family="monospace" font-size="11" fill="#475569">everything runs locally · no server · no telemetry</text>
+</svg>

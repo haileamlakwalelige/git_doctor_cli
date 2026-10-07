@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>git-doctor — Diagnose broken and confusing Git repositories</title>
+<meta name="description" content="git-doctor inspects a Git repository and tells you what is wrong — and exactly how to fix it. Like ESLint for your Git repo. Read-only, runs locally, no telemetry, MIT.">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#f6f4ef">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2315161a'/%3E%3Cpath d='M16 8v16M8 16h16' stroke='%23c0281f' stroke-width='4.5' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Space+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --paper:#f6f4ef;
+  --card:#fbfaf7;
+  --ink:#15161a;
+  --ink-soft:#4a4c55;
+  --ink-faint:#67696f;
+  --rule:#d9d4c7;
+  --critical:#c0281f;
+  --critical-on-dark:#ff6b60;
+  --amber:#c97a10;
+  --amber-ink:#8c5509;
+  --amber-on-dark:#e6a93f;
+  --blue:#2563eb;
+  --green:#15803d;
+  --green-on-dark:#35c169;
+  --dark:#111214;
+  --dark-line:#2b2e34;
+  --on-dark:#e9e7e0;
+  --on-dark-soft:#a9a79e;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace;
+  --sans:"Space Grotesk","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --wrap:1280px;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{
+  margin:0;
+  font-family:var(--sans);
+  font-size:clamp(1rem,.2vw + .95rem,1.0625rem);
+  line-height:1.6;
+  color:var(--ink);
+  background-color:var(--paper);
+  background-image:url("assets/paper-grain.png");
+  background-repeat:repeat;
+  background-size:128px 128px;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+img,svg{display:block;max-width:100%}
+h1,h2,h3{line-height:1.12;letter-spacing:-.015em;margin:0}
+p{margin:0}
+a{color:inherit}
+code,pre{font-family:var(--mono)}
+::selection{background:rgba(201,122,16,.28)}
+
+:where(a,button,summary,[tabindex]):focus-visible{
+  outline:2.5px solid var(--blue);
+  outline-offset:3px;
+  border-radius:2px;
+}
+
+.wrap{max-width:var(--wrap);margin-inline:auto;padding-inline:clamp(1.1rem,4vw,2rem)}
+.visually-hidden{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.skip-link{
+  position:absolute;left:1rem;top:-4rem;z-index:200;
+  background:var(--ink);color:var(--paper);
+  font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;
+  padding:.7rem 1rem;text-decoration:none;transition:top .18s ease;
+}
+.skip-link:focus{top:1rem}
+section[id]{scroll-margin-top:88px}
+
+code:not(pre code){
+  font-family:var(--mono);font-size:.9em;
+  background:rgba(21,22,26,.055);
+  border:1px solid rgba(21,22,26,.12);
+  padding:.08em .34em;
+  border-radius:3px;
+  white-space:nowrap;
+}
+
+/* ---------- masthead ---------- */
+.masthead{
+  position:sticky;top:0;z-index:80;
+  background-color:var(--paper);
+  background-image:url("assets/paper-grain.png");
+  background-size:128px 128px;
+  border-bottom:1.5px solid var(--ink);
+}
+.masthead::before{
+  content:"";display:block;height:4px;
+  background:linear-gradient(90deg,
+    var(--critical) 0 25%, var(--amber) 25% 50%,
+    var(--blue) 50% 75%, var(--green) 75% 100%);
+}
+.masthead__inner{
+  display:flex;align-items:center;gap:1.5rem;
+  min-height:56px;padding-block:.5rem;
+}
+.brand{
+  display:inline-flex;align-items:center;gap:.6rem;
+  text-decoration:none;font-family:var(--mono);font-weight:600;
+  font-size:1rem;letter-spacing:-.01em;
+}
+.brand svg{flex:none}
+.masthead__nav{margin-left:auto}
+.masthead__nav ul{display:flex;gap:1.6rem;list-style:none;margin:0;padding:0}
+.masthead__nav a{
+  font-family:var(--mono);font-size:.72rem;font-weight:500;
+  letter-spacing:.16em;text-transform:uppercase;text-decoration:none;
+  color:var(--ink-soft);padding-block:.35rem;
+  border-bottom:2px solid transparent;
+  transition:color .16s ease,border-color .16s ease;
+}
+.masthead__nav a:hover{color:var(--ink);border-bottom-color:var(--critical)}
+.masthead__gh{
+  font-family:var(--mono);font-size:.72rem;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;text-decoration:none;
+  border:1.5px solid var(--ink);padding:.5rem .8rem;
+  background:var(--card);
+  box-shadow:3px 3px 0 rgba(21,22,26,.14);
+  transition:transform .16s ease,box-shadow .16s ease,background .16s ease,color .16s ease;
+}
+.masthead__gh:hover{background:var(--ink);color:var(--paper);transform:translate(-2px,-2px);box-shadow:5px 5px 0 rgba(21,22,26,.2)}
+.masthead__gh:active{transform:translate(0,0);box-shadow:1px 1px 0 rgba(21,22,26,.2)}
+
+/* ---------- hero ---------- */
+.hero__grid{
+  display:grid;
+  grid-template-columns:minmax(0,1.02fr) minmax(0,.98fr);
+  gap:clamp(2rem,5vw,4.5rem);
+  align-items:start;
+  padding-block:clamp(2.5rem,6vw,4.75rem) clamp(2.5rem,6vw,4rem);
+}
+.wordmark{
+  display:inline-flex;align-items:center;gap:.7rem;
+  font-family:var(--mono);font-weight:600;font-size:1.05rem;
+  letter-spacing:.02em;
+}
+.wordmark svg{flex:none}
+.hero h1{
+  margin-top:1.15rem;
+  font-size:clamp(2.15rem,4.4vw,3.4rem);
+  font-weight:700;letter-spacing:-.025em;line-height:1.05;
+  max-width:15ch;
+}
+.mark{
+  background-image:linear-gradient(rgba(201,122,16,.34),rgba(201,122,16,.34));
+  background-size:100% .4em;background-position:0 86%;background-repeat:no-repeat;
+}
+.lede{
+  margin-top:1.15rem;
+  font-family:var(--mono);font-size:clamp(.98rem,1.3vw,1.1rem);
+  color:var(--ink);
+}
+.lede__slash{color:var(--amber-ink);font-weight:600}
+
+/* install */
+.install{
+  margin-top:2.1rem;
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  grid-template-areas:"tag cmd copy";
+  align-items:stretch;
+  max-width:34.5rem;
+  border:1.5px solid var(--ink);
+  background:#fff;
+  box-shadow:5px 5px 0 rgba(21,22,26,.11);
+}
+.install__tag{
+  grid-area:tag;
+  display:flex;align-items:center;padding-inline:.95rem;
+  background:var(--ink);color:var(--paper);
+  font-family:var(--mono);font-size:.7rem;font-weight:600;
+  letter-spacing:.16em;text-transform:uppercase;
+}
+.install__cmd{
+  grid-area:cmd;
+  display:flex;align-items:center;
+  padding:.85rem 1rem;min-width:0;
+  background:none;border:none;border-radius:0;
+  font-family:var(--mono);
+  font-size:clamp(.84rem,1.4vw,.98rem);
+  white-space:nowrap;overflow-x:auto;
+}
+.copy{
+  grid-area:copy;
+  display:inline-flex;align-items:center;gap:.45rem;
+  font-family:var(--mono);font-size:.7rem;font-weight:600;
+  letter-spacing:.16em;text-transform:uppercase;
+  padding:.5rem .9rem;
+  background:var(--card);color:var(--ink);
+  border:none;border-left:1.5px solid var(--ink);
+  cursor:pointer;
+  transition:background .16s ease,color .16s ease;
+}
+.copy:hover{background:var(--ink);color:var(--paper)}
+.copy.is-copied{background:var(--card);color:var(--green);border-left-color:var(--green)}
+.copy svg{flex:none}
+.copy--dark{
+  background:transparent;color:var(--on-dark);
+  border:1.5px solid var(--on-dark-soft);border-radius:2px;
+  padding:.35rem .7rem;
+}
+.copy--dark:hover{background:var(--on-dark);color:var(--dark);border-color:var(--on-dark)}
+.copy--dark.is-copied{color:var(--green-on-dark);border-color:var(--green-on-dark);background:transparent}
+
+/* cta + trust */
+.cta-row{display:flex;flex-wrap:wrap;gap:.9rem;margin-top:1.6rem}
+.btn{
+  display:inline-flex;align-items:center;gap:.55rem;
+  font-family:var(--mono);font-size:.78rem;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;text-decoration:none;
+  padding:.9rem 1.3rem;border:1.5px solid var(--ink);
+  transition:transform .16s ease,box-shadow .16s ease,background .16s ease,color .16s ease,border-color .16s ease;
+}
+.btn--solid{
+  background:var(--ink);color:var(--paper);
+  box-shadow:4px 4px 0 rgba(21,22,26,.18);
+}
+.btn--solid:hover{background:var(--critical);border-color:var(--critical);transform:translate(-2px,-2px);box-shadow:6px 6px 0 rgba(21,22,26,.22)}
+.btn--ghost{background:transparent;color:var(--ink)}
+.btn--ghost:hover{background:var(--ink);color:var(--paper);transform:translate(-2px,-2px);box-shadow:4px 4px 0 rgba(21,22,26,.16)}
+.btn:active{transform:translate(0,0);box-shadow:1px 1px 0 rgba(21,22,26,.22)}
+.trust{
+  margin-top:1.7rem;
+  font-family:var(--mono);font-size:.74rem;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);
+}
+.trust span{color:var(--green);font-weight:600}
+
+/* ---------- report card ---------- */
+.report{margin:0;padding-top:.9rem;max-width:44rem}
+.report__board{
+  position:relative;
+  background:linear-gradient(180deg,#34373e 0%,#212329 100%);
+  border:1.5px solid #141519;
+  border-radius:10px;
+  padding:12px 12px 14px;
+  box-shadow:10px 12px 0 rgba(21,22,26,.12);
+}
+.report__clip{
+  position:absolute;top:-11px;left:50%;transform:translateX(-50%);
+  width:132px;height:24px;z-index:3;
+  background:linear-gradient(180deg,#585d67 0%,#2c2f36 55%,#1c1e23 100%);
+  border:1.5px solid #101115;border-radius:5px 5px 3px 3px;
+}
+.report__clip::after{
+  content:"";position:absolute;left:10px;right:10px;bottom:4px;height:2px;
+  background:rgba(255,255,255,.16);border-radius:2px;
+}
+.report__sheet{
+  position:relative;
+  background:var(--card);
+  border:1.5px solid var(--ink);
+  border-bottom:none;
+  padding:1.35rem 1.4rem 0;
+  font-family:var(--mono);
+}
+.report__band{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:1rem;flex-wrap:wrap;
+  padding-bottom:.9rem;
+  border-bottom:1px solid var(--rule);
+}
+.stamp{
+  display:inline-block;
+  font-family:var(--mono);font-size:.7rem;font-weight:600;
+  letter-spacing:.16em;text-transform:uppercase;
+  padding:.32rem .55rem;border:2px solid currentColor;
+  transform:rotate(-4deg);
+  transition:transform .2s ease;
+}
+.report__band .stamp:last-child{transform:rotate(3.5deg)}
+.stamp--crit{color:var(--critical)}
+.stamp--blue{color:var(--blue)}
+.report__band:hover .stamp{transform:rotate(0deg)}
+
+.report__out{
+  margin:0;
+  font-family:var(--mono);
+  font-size:.82rem;line-height:1.7;
+  white-space:pre-wrap;overflow-wrap:break-word;
+  color:var(--ink);
+  tab-size:4;
+}
+.report__out--head{padding-top:1rem;font-weight:600}
+.report__path{color:var(--ink-faint);font-weight:400}
+.pulse{width:100%;height:22px;margin:.55rem 0 .35rem;overflow:visible}
+.pulse .pulse__base{stroke:var(--rule);stroke-width:1.5;fill:none}
+.pulse .pulse__beat{stroke:var(--critical);stroke-width:1.8;fill:none;stroke-linejoin:round;stroke-linecap:round}
+.sev{font-weight:700}
+.sev--medium{color:var(--amber-ink)}
+.sev--info{color:var(--blue)}
+.sev--critical{color:var(--critical)}
+.report__note{color:var(--ink-faint);font-size:.78rem;padding:.6rem 0 0 2ch}
+.report__summary{
+  margin:1rem -1.4rem 0;
+  padding:.75rem 1.4rem;
+  border-top:2px dashed var(--rule);
+  background:rgba(21,22,26,.035);
+  font-family:var(--mono);font-size:.78rem;font-weight:600;
+}
+.report__slip{
+  position:relative;
+  margin:1.1rem -1.4rem 0;
+  padding:.95rem 1.1rem 1.05rem;
+  background:var(--dark);
+  color:var(--on-dark);
+}
+.report__slip .stamp{
+  position:absolute;top:-.75rem;right:.9rem;
+  background:var(--dark);color:var(--critical-on-dark);
+  transform:rotate(-5deg);
+}
+.report__slip .report__out{color:var(--on-dark);font-size:.7rem;line-height:1.75}
+.report__slip .sev--critical{color:var(--critical-on-dark)}
+.report__slip .tok{color:var(--amber-on-dark)}
+.report__tear{
+  height:13px;
+  background:var(--card);
+  border-top:2px dashed #c7c2b2;
+  -webkit-mask:radial-gradient(circle 6px at 6px 13px,transparent 6px,#000 6.5px) 0 0/12px 13px repeat-x;
+  mask:radial-gradient(circle 6px at 6px 13px,transparent 6px,#000 6.5px) 0 0/12px 13px repeat-x;
+}
+.report figcaption{
+  margin-top:.9rem;
+  font-family:var(--mono);font-size:.7rem;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);
+}
+/* ---------- sections ---------- */
+.section{margin-top:clamp(3.25rem,7vw,5.75rem)}
+.section--ruled{border-top:2px solid var(--ink)}
+.shead{position:relative;display:flex;align-items:flex-start;gap:1.1rem;padding-top:clamp(1.75rem,3vw,2.5rem)}
+.shead__no{
+  position:absolute;top:0;left:0;transform:translateY(-50%);
+  flex:none;
+  background:var(--paper);
+  border:2px solid var(--ink);
+  padding:.35rem .7rem;
+  font-family:var(--mono);font-size:.78rem;font-weight:600;letter-spacing:.14em;
+}
+.shead__body{padding-bottom:.35rem}
+.shead h2{font-size:clamp(1.75rem,3.4vw,2.6rem);font-weight:700}
+.shead__sub{
+  margin-top:.45rem;
+  font-family:var(--mono);font-size:.82rem;color:var(--ink-soft);
+  max-width:64ch;
+}
+
+/* ---------- checks sheet ---------- */
+.legend{
+  display:flex;flex-wrap:wrap;gap:.55rem;
+  list-style:none;margin:2.2rem 0 1.1rem;padding:0;
+}
+.legend li{
+  display:inline-flex;align-items:center;gap:.45rem;
+  font-family:var(--mono);font-size:.7rem;font-weight:600;
+  letter-spacing:.16em;text-transform:uppercase;
+  border:1.5px solid currentColor;padding:.34rem .6rem;
+  background:rgba(255,255,255,.55);
+}
+.legend .g{font-size:.85rem;line-height:1}
+.lg-critical{color:var(--critical)}
+.lg-high,.lg-medium{color:var(--amber-ink)}
+.lg-low,.lg-info{color:var(--blue)}
+
+.sheet{
+  list-style:none;margin:0;padding:0;
+  border:1.5px solid var(--ink);
+  background:var(--card);
+  box-shadow:6px 6px 0 rgba(21,22,26,.09);
+}
+.sheet__row{
+  --sev:var(--amber);--sev-ink:var(--amber-ink);
+  position:relative;
+  display:grid;
+  grid-template-columns:3.4rem 10.5rem minmax(0,1fr) 8.6rem;
+  gap:1rem;align-items:center;
+  padding:.95rem 1.3rem .95rem 1.6rem;
+  border-bottom:1px solid var(--rule);
+}
+.sheet__row:last-child{border-bottom:none}
+.sheet__row:nth-child(even){background:rgba(21,22,26,.022)}
+.sheet__row::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:5px;
+  background:var(--sev);
+  transform:scaleY(.34);
+  transition:transform .28s cubic-bezier(.2,.7,.3,1);
+}
+.sheet__row:hover::before{transform:scaleY(1)}
+.sheet__no{
+  font-family:var(--mono);font-size:.72rem;font-weight:500;
+  color:var(--ink-faint);letter-spacing:.08em;
+}
+.sheet__id{
+  display:inline-block;justify-self:start;
+  font-family:var(--mono);font-size:.86rem;font-weight:600;
+  background:rgba(21,22,26,.06);
+  border:1.5px solid rgba(21,22,26,.35);
+  padding:.24rem .55rem;border-radius:3px;
+  white-space:nowrap;
+  transition:background .18s ease,border-color .18s ease,color .18s ease;
+}
+.sheet__row:hover .sheet__id{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.sheet__desc{font-size:.98rem;line-height:1.5;color:var(--ink)}
+.sev-stamp{
+  justify-self:end;
+  display:inline-flex;align-items:center;gap:.4rem;
+  font-family:var(--mono);font-size:.7rem;font-weight:600;
+  letter-spacing:.16em;text-transform:uppercase;
+  color:var(--sev-ink);border:1.5px solid currentColor;
+  padding:.3rem .5rem;background:rgba(255,255,255,.6);
+  transform:rotate(-2deg);
+  transition:transform .2s ease;
+  white-space:nowrap;
+}
+.sheet__row:hover .sev-stamp{transform:rotate(0)}
+.sheet__row--critical{--sev:var(--critical);--sev-ink:var(--critical)}
+.sheet__row--high,.sheet__row--medium{--sev:var(--amber);--sev-ink:var(--amber-ink)}
+.sheet__row--low,.sheet__row--info{--sev:var(--blue);--sev-ink:var(--blue)}
+.sheet__foot{
+  margin-top:.9rem;
+  font-family:var(--mono);font-size:.74rem;color:var(--ink-faint);
+}
+
+/* ---------- safe ---------- */
+.safe{
+  list-style:none;margin:2.4rem 0 0;padding:0;
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:0 3rem;
+}
+.safe__item{
+  display:flex;gap:1rem;
+  border-top:1.5px solid var(--ink);
+  padding:1.5rem 0 1.9rem;
+}
+.safe__box{
+  flex:none;width:26px;height:26px;margin-top:.2rem;
+  border:1.5px solid var(--green);
+  display:grid;place-items:center;
+  background:rgba(21,128,61,.07);
+}
+.safe__item h3{
+  font-family:var(--mono);font-size:.95rem;font-weight:600;
+  letter-spacing:.06em;text-transform:uppercase;
+}
+.safe__item p{margin-top:.55rem;color:var(--ink-soft);font-size:.99rem}
+.safe__item code{font-size:.86em;background:rgba(21,22,26,.06)}
+
+/* ---------- CI gate ---------- */
+.ci__grid{
+  display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);
+  gap:clamp(1.8rem,4vw,3.5rem);
+  margin-top:2.3rem;align-items:start;
+}
+.ci h3,.usage h3{
+  font-family:var(--mono);font-size:.8rem;font-weight:600;
+  letter-spacing:.2em;text-transform:uppercase;
+  margin-bottom:1rem;
+}
+.codes{width:100%;border-collapse:collapse;background:var(--card);border:1.5px solid var(--ink);box-shadow:5px 5px 0 rgba(21,22,26,.09)}
+.codes th,.codes td{padding:.85rem 1.1rem;text-align:left;border-bottom:1px solid var(--rule)}
+.codes tr:last-child td{border-bottom:none}
+.codes th{
+  font-family:var(--mono);font-size:.7rem;font-weight:600;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);
+  background:rgba(21,22,26,.04);
+}
+.codes td{font-size:.97rem}
+.code{
+  display:inline-block;min-width:2.1rem;text-align:center;
+  font-family:var(--mono);font-size:1.15rem;font-weight:600;
+  border:1.5px solid currentColor;border-radius:3px;
+  padding:.1rem .35rem;background:#fff;
+}
+.code--ok{color:var(--green)}
+.code--warn{color:var(--amber-ink)}
+.code--err{color:var(--critical)}
+.ci__note{
+  margin-top:1.1rem;font-family:var(--mono);font-size:.8rem;color:var(--ink-soft);
+}
+
+/* ---------- terminal ---------- */
+.term{
+  background:var(--dark);
+  border:1.5px solid var(--ink);
+  box-shadow:6px 6px 0 rgba(21,22,26,.14);
+  color:var(--on-dark);
+  max-width:100%;
+}
+.term__bar{
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  padding:.5rem .8rem;
+  border-bottom:1px solid #5c6270;
+  font-family:var(--mono);font-size:.7rem;font-weight:500;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--on-dark-soft);
+}
+.term__pre{
+  margin:0;padding:1.1rem 1.2rem;
+  font-family:var(--mono);font-size:.82rem;line-height:1.8;
+  white-space:pre;overflow-x:auto;
+}
+.prompt{color:var(--green-on-dark);font-weight:600}
+.term__out{color:var(--on-dark);font-weight:600}
+.yaml-key{color:var(--on-dark-soft)}
+.yaml-run{color:var(--amber-on-dark)}
+
+/* ---------- usage (dark band) ---------- */
+.section--dark{
+  --band-pad:clamp(3rem,6.5vw,5rem);
+  position:relative;
+  background:var(--dark);
+  color:var(--on-dark);
+  margin-top:clamp(3.25rem,7vw,5.75rem);
+  padding-block:var(--band-pad);
+}
+.section--dark::before{
+  content:"";
+  position:absolute;
+  left:0;right:0;
+  top:calc(var(--band-pad) - 1px);
+  height:2px;
+  background:#5c6270;
+}
+.section--dark .shead__no{background:var(--dark);border-color:var(--on-dark);color:var(--on-dark)}
+.section--dark .shead__sub{color:var(--on-dark-soft)}
+.section--dark code:not(pre code){
+  background:rgba(233,231,224,.08);
+  border-color:rgba(233,231,224,.22);
+  color:var(--on-dark);
+}
+.usage__grid{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:clamp(1.8rem,4vw,3.5rem);
+  margin-top:2.8rem;align-items:start;
+}
+.ci__grid > div,.usage__grid > div{min-width:0}
+.usage__term{margin-top:2.4rem}
+.section--dark .term{
+  background:#0a0b0c;
+  border-color:#5c6270;
+  box-shadow:6px 6px 0 rgba(0,0,0,.6);
+}
+.usage__term .term__pre{white-space:pre-wrap;overflow-wrap:break-word}
+.flags{margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 1.6rem}
+.flags > div{
+  display:flex;flex-direction:column;gap:.3rem;
+  padding:.85rem 0;border-bottom:1px dashed var(--dark-line);
+}
+.flags dt{
+  font-family:var(--mono);font-size:.86rem;font-weight:600;
+  color:var(--amber-on-dark);
+}
+.flags dd{margin:0;font-size:.92rem;color:var(--on-dark-soft);line-height:1.5}
+.rules{
+  margin:0;padding:1rem 1.1rem;
+  min-width:0;
+  background:var(--paper);color:var(--ink);
+  border:1.5px solid var(--ink);
+  font-family:var(--mono);font-size:.78rem;line-height:1.85;
+  white-space:pre;overflow-x:auto;
+  box-shadow:5px 5px 0 rgba(0,0,0,.35);
+}
+.usage__note{
+  margin-top:1.1rem;font-size:.95rem;color:var(--on-dark-soft);max-width:52ch;
+}
+.usage__note code{font-size:.88em}
+
+/* ---------- footer ---------- */
+.footer{
+  border-top:2px solid var(--ink);
+  margin-top:clamp(3rem,6vw,4.5rem);
+  padding-block:2.6rem 3rem;
+}
+.footer__grid{
+  display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.2fr) minmax(0,1fr);
+  gap:2rem;align-items:start;
+}
+.footer__meta{
+  margin-top:.7rem;
+  font-family:var(--mono);font-size:.76rem;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);
+}
+.footer h2{
+  font-family:var(--mono);font-size:.7rem;font-weight:600;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint);
+}
+.footer__road p{margin-top:.6rem;font-size:.95rem;color:var(--ink-soft)}
+.footer__links{text-align:right}
+.footer__links a{
+  font-family:var(--mono);font-size:.82rem;text-decoration:none;
+  border-bottom:1.5px solid var(--amber);
+  padding-bottom:.15rem;
+  transition:color .16s ease,border-color .16s ease;
+  word-break:break-all;
+}
+.footer__links a:hover{color:var(--critical);border-bottom-color:var(--critical)}
+
+/* ---------- motion ---------- */
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes drop{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+@keyframes place{from{opacity:0;transform:translateY(26px) rotate(1.6deg)}to{opacity:1;transform:translateY(0) rotate(-.3deg)}}
+@keyframes beat{to{stroke-dashoffset:0}}
+.masthead{animation:drop .5s .05s cubic-bezier(.2,.7,.3,1) backwards}
+.hero__copy > *{animation:rise .6s cubic-bezier(.2,.7,.3,1) backwards}
+.hero__copy > *:nth-child(1){animation-delay:.08s}
+.hero__copy > *:nth-child(2){animation-delay:.16s}
+.hero__copy > *:nth-child(3){animation-delay:.24s}
+.hero__copy > *:nth-child(4){animation-delay:.32s}
+.hero__copy > *:nth-child(5){animation-delay:.4s}
+.hero__copy > *:nth-child(6){animation-delay:.48s}
+.report{animation:place .75s .3s cubic-bezier(.2,.7,.3,1) backwards;transform:rotate(-.3deg)}
+.pulse__beat{stroke-dasharray:640;stroke-dashoffset:640;animation:beat 1.7s .75s ease-out forwards}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-delay:0ms !important;
+    transition-duration:.001ms !important;
+  }
+}
+
+/* ---------- responsive ---------- */
+@media (max-width:1060px){
+  .hero__grid{grid-template-columns:1fr;padding-bottom:2rem}
+  .report{max-width:41rem}
+  .hero h1{max-width:20ch}
+}
+@media (max-width:940px){
+  .ci__grid,.usage__grid{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:880px){
+  .sheet__row{
+    grid-template-columns:auto minmax(0,1fr) auto;
+    grid-template-areas:"no id sev" "desc desc desc";
+    gap:.5rem 1rem;
+    padding:1rem 1.1rem 1.05rem 1.4rem;
+  }
+  .sheet__no{grid-area:no}
+  .sheet__id{grid-area:id}
+  .sheet__desc{grid-area:desc;margin-top:.35rem}
+  .sev-stamp{grid-area:sev}
+}
+@media (max-width:760px){
+  .masthead__inner{flex-wrap:wrap;row-gap:.55rem}
+  .masthead__nav{
+    order:3;flex:1 0 100%;
+    margin-left:0;
+  }
+  .masthead__nav ul{gap:.4rem}
+  .masthead__nav a{
+    display:inline-block;
+    padding:.28rem .5rem;
+    border:2px solid var(--ink);
+    background:var(--card);
+    box-shadow:2px 2px 0 rgba(21,22,26,.14);
+  }
+  .masthead__nav a:hover{background:var(--ink);color:var(--paper)}
+  .nav__word{display:none}
+  section[id]{scroll-margin-top:125px}
+  .safe{grid-template-columns:1fr;gap:0}
+  .flags{grid-template-columns:minmax(0,1fr)}
+  .footer__grid{grid-template-columns:1fr;gap:1.7rem}
+  .footer__links{text-align:left}
+  .shead{flex-direction:column;align-items:flex-start;gap:.8rem}
+}
+@media (max-width:560px){
+  .install{
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-areas:"tag tag" "cmd copy";
+  }
+  .install__tag{border-bottom:1.5px solid var(--ink);padding-block:.5rem}
+  .report__sheet{padding:1.1rem 1rem 0}
+  .report__summary{margin-inline:-1rem;padding-inline:1rem}
+  .report__slip{margin-inline:-1rem;padding-inline:.9rem}
+  .report__out{font-size:.76rem}
+  .report__slip .report__out{font-size:.66rem}
+  .term__pre{font-size:.74rem;padding:.9rem 1rem}
+  .rules{font-size:.7rem;padding:.85rem .9rem}
+  .safe__item{padding-bottom:1.4rem}
+  .cta-row .btn{flex:1 1 100%;justify-content:center}
+}
+@media (max-width:400px){
+  .sheet__row{padding-left:1.2rem}
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="masthead">
+  <div class="wrap masthead__inner">
+    <a class="brand" href="./" aria-label="git-doctor home">
+      <svg width="24" height="24" viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="6" fill="none" stroke="currentColor" stroke-width="2.5"/>
+        <path d="M16 8v16M8 16h16" stroke="#c0281f" stroke-width="4" stroke-linecap="round"/>
+      </svg>
+      <span>git-doctor</span>
+    </a>
+    <nav class="masthead__nav" aria-label="Page sections">
+      <ul>
+        <li><a href="#checks" aria-label="01 Checks"><span class="nav__no">01</span> <span class="nav__word">Checks</span></a></li>
+        <li><a href="#safe" aria-label="02 Safety"><span class="nav__no">02</span> <span class="nav__word">Safety</span></a></li>
+        <li><a href="#ci" aria-label="03 CI"><span class="nav__no">03</span> <span class="nav__word">CI</span></a></li>
+        <li><a href="#usage" aria-label="04 Usage"><span class="nav__no">04</span> <span class="nav__word">Usage</span></a></li>
+      </ul>
+    </nav>
+    <a class="masthead__gh" href="https://github.com/haileamlakwalelige/git_doctor">GitHub&nbsp;↗</a>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap hero__grid">
+      <div class="hero__copy">
+        <p class="wordmark">
+          <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true">
+            <rect x="1.5" y="1.5" width="29" height="29" rx="6" fill="none" stroke="currentColor" stroke-width="2.5"/>
+            <path d="M16 8v16M8 16h16" stroke="#c0281f" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+          <span>git-doctor</span>
+        </p>
+        <h1 id="hero-title">Diagnose broken and confusing <span class="mark">Git repositories.</span></h1>
+        <p class="lede"><span class="lede__slash" aria-hidden="true">//</span> Like ESLint for your Git repo.</p>
+
+        <div class="install">
+          <span class="install__tag">Install</span>
+          <code class="install__cmd">npm install -g git-doctor</code>
+          <button class="copy" type="button" data-copy="npm install -g git-doctor">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+              <rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            <span class="copy__label">Copy</span>
+          </button>
+        </div>
+
+        <div class="cta-row">
+          <a class="btn btn--solid" href="https://github.com/haileamlakwalelige/git_doctor">View on GitHub <span aria-hidden="true">↗</span></a>
+          <a class="btn btn--ghost" href="#checks">See the checks</a>
+        </div>
+
+        <p class="trust"><span aria-hidden="true">●</span> read-only · runs locally · no telemetry · MIT</p>
+        <p id="copy-status" class="visually-hidden" role="status" aria-live="polite"></p>
+      </div>
+
+      <figure class="report">
+        <div class="report__board">
+          <div class="report__clip" aria-hidden="true"></div>
+          <div class="report__sheet">
+            <div class="report__band">
+              <span class="stamp stamp--crit">Self-scan</span>
+              <span class="stamp stamp--blue">Read-only</span>
+            </div>
+
+            <pre class="report__out report__out--head">Git Doctor v0.1.0
+<span class="report__path">…/git_doctor (branch main, 39601912)</span></pre>
+
+            <svg class="pulse" viewBox="0 0 480 24" preserveAspectRatio="none" aria-hidden="true">
+              <path class="pulse__base" d="M0 13 H480"/>
+              <path class="pulse__beat" d="M0 13 H150 l7 -8 7 8 H240 l9 -4 5 8 6 -16 7 24 6 -12 H330 l8 -5 5 10 5 -5 H480"/>
+            </svg>
+
+            <pre class="report__out">  <span class="sev sev--medium">⚠</span> 1 branch contains unmerged work
+      backup/pre-rewrite
+  <span class="sev sev--info">ℹ</span> Working tree has 12 uncommitted changes
+      0 staged, 8 unstaged, 4 untracked</pre>
+
+            <p class="report__note">2 findings hidden by .gitdoctorignore (--no-ignore to show them)</p>
+
+            <p class="report__summary">2 findings (1 medium, 1 info) from 10 checks in 2.08s</p>
+
+            <div class="report__slip">
+              <span class="stamp">Redacted</span>
+              <pre class="report__out">  <span class="sev sev--critical">✖</span> 1 secret detected in previous commits
+      - GitHub token: <span class="tok">ghp_ab****** (38 chars)</span>
+      (first in 2c544284, src/config.js)
+      Scanned the last 4 commits.</pre>
+            </div>
+          </div>
+          <div class="report__tear" aria-hidden="true"></div>
+        </div>
+        <figcaption>Real output — git-doctor scanned its own repository</figcaption>
+      </figure>
+    </div>
+  </section>
+  <!-- ============ 01 · THE 10 CHECKS ============ -->
+  <section id="checks" class="section section--ruled" aria-labelledby="checks-title">
+    <div class="wrap">
+      <header class="shead">
+        <span class="shead__no" aria-hidden="true">01</span>
+        <div class="shead__body">
+          <h2 id="checks-title">The 10 checks</h2>
+          <p class="shead__sub">All ten run by default. <code>git-doctor --list-checks</code> prints this sheet from any checkout.</p>
+        </div>
+      </header>
+
+      <ul class="legend" aria-label="Severity scale used by git-doctor">
+        <li class="lg-critical"><span class="g" aria-hidden="true">✖</span> critical</li>
+        <li class="lg-high"><span class="g" aria-hidden="true">▲</span> high</li>
+        <li class="lg-medium"><span class="g" aria-hidden="true">⚠</span> medium</li>
+        <li class="lg-low"><span class="g" aria-hidden="true">•</span> low</li>
+        <li class="lg-info"><span class="g" aria-hidden="true">ℹ</span> info</li>
+      </ul>
+
+      <ol class="sheet">
+        <li class="sheet__row sheet__row--high">
+          <span class="sheet__no" aria-hidden="true">01</span>
+          <code class="sheet__id">repo</code>
+          <p class="sheet__desc">Detached HEAD, in-progress operations, unresolved conflicts, uncommitted changes</p>
+          <span class="sev-stamp"><span aria-hidden="true">▲</span> high</span>
+        </li>
+        <li class="sheet__row sheet__row--high">
+          <span class="sheet__no" aria-hidden="true">02</span>
+          <code class="sheet__id">dangling</code>
+          <p class="sheet__desc">Commits that are no longer reachable from any branch (lost work)</p>
+          <span class="sev-stamp"><span aria-hidden="true">▲</span> high</span>
+        </li>
+        <li class="sheet__row sheet__row--medium">
+          <span class="sheet__no" aria-hidden="true">03</span>
+          <code class="sheet__id">branches</code>
+          <p class="sheet__desc">Unmerged work, stale merged branches, branches tracking deleted remotes</p>
+          <span class="sev-stamp"><span aria-hidden="true">⚠</span> medium</span>
+        </li>
+        <li class="sheet__row sheet__row--medium">
+          <span class="sheet__no" aria-hidden="true">04</span>
+          <code class="sheet__id">sync</code>
+          <p class="sheet__desc">Branches that are ahead of or behind their upstream</p>
+          <span class="sev-stamp"><span aria-hidden="true">⚠</span> medium</span>
+        </li>
+        <li class="sheet__row sheet__row--high">
+          <span class="sheet__no" aria-hidden="true">05</span>
+          <code class="sheet__id">large-files</code>
+          <p class="sheet__desc">Oversized blobs stored anywhere in the repository history</p>
+          <span class="sev-stamp"><span aria-hidden="true">▲</span> high</span>
+        </li>
+        <li class="sheet__row sheet__row--critical">
+          <span class="sheet__no" aria-hidden="true">06</span>
+          <code class="sheet__id">secrets</code>
+          <p class="sheet__desc">Credentials and private keys committed at some point in history</p>
+          <span class="sev-stamp"><span aria-hidden="true">✖</span> critical</span>
+        </li>
+        <li class="sheet__row sheet__row--high">
+          <span class="sheet__no" aria-hidden="true">07</span>
+          <code class="sheet__id">ignored-tracked</code>
+          <p class="sheet__desc">Files that are committed yet matched by .gitignore</p>
+          <span class="sev-stamp"><span aria-hidden="true">▲</span> high</span>
+        </li>
+        <li class="sheet__row sheet__row--critical">
+          <span class="sheet__no" aria-hidden="true">08</span>
+          <code class="sheet__id">config</code>
+          <p class="sheet__desc">Missing git identity, leaked credentials in remote URLs, missing remotes</p>
+          <span class="sev-stamp"><span aria-hidden="true">✖</span> critical</span>
+        </li>
+        <li class="sheet__row sheet__row--high">
+          <span class="sheet__no" aria-hidden="true">09</span>
+          <code class="sheet__id">submodules</code>
+          <p class="sheet__desc">Uninitialized, out-of-date or broken submodule entries</p>
+          <span class="sev-stamp"><span aria-hidden="true">▲</span> high</span>
+        </li>
+        <li class="sheet__row sheet__row--info">
+          <span class="sheet__no" aria-hidden="true">10</span>
+          <code class="sheet__id">stash</code>
+          <p class="sheet__desc">Stashed changes that may have been forgotten</p>
+          <span class="sev-stamp"><span aria-hidden="true">ℹ</span> info</span>
+        </li>
+      </ol>
+      <p class="sheet__foot">* Stamp shows the highest severity the check can report. Descriptions verbatim from <code>git-doctor --list-checks</code>.</p>
+    </div>
+  </section>
+
+  <!-- ============ 02 · SAFE BY DESIGN ============ -->
+  <section id="safe" class="section section--ruled" aria-labelledby="safe-title">
+    <div class="wrap">
+      <header class="shead">
+        <span class="shead__no" aria-hidden="true">02</span>
+        <div class="shead__body">
+          <h2 id="safe-title">Safe by design</h2>
+          <p class="shead__sub">What git-doctor does — and does not — do to your repository.</p>
+        </div>
+      </header>
+
+      <ul class="safe">
+        <li class="safe__item">
+          <span class="safe__box" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5.5 5.5L20 6.5"/></svg>
+          </span>
+          <div>
+            <h3>Read-only</h3>
+            <p>It never modifies the repository. Every check only reads — after a scan, every byte is exactly where it was.</p>
+          </div>
+        </li>
+        <li class="safe__item">
+          <span class="safe__box" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5.5 5.5L20 6.5"/></svg>
+          </span>
+          <div>
+            <h3>Secrets stay redacted</h3>
+            <p>Secret values are masked as <code>ghp_ab****** (38 chars)</code> everywhere — in text output and in <code>--json</code> — so reports are safe to share.</p>
+          </div>
+        </li>
+        <li class="safe__item">
+          <span class="safe__box" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5.5 5.5L20 6.5"/></svg>
+          </span>
+          <div>
+            <h3>Runs entirely locally</h3>
+            <p>No server, no telemetry. The repository never leaves your machine — the whole diagnosis happens in your terminal.</p>
+          </div>
+        </li>
+        <li class="safe__item">
+          <span class="safe__box" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5.5 5.5L20 6.5"/></svg>
+          </span>
+          <div>
+            <h3>Fixes included</h3>
+            <p>Every finding comes with the exact commands to run to fix it — no guesswork, no link to a documentation page.</p>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </section>
+  <!-- ============ 03 · CI GATE ============ -->
+  <section id="ci" class="section section--ruled ci" aria-labelledby="ci-title">
+    <div class="wrap">
+      <header class="shead">
+        <span class="shead__no" aria-hidden="true">03</span>
+        <div class="shead__body">
+          <h2 id="ci-title">CI gate</h2>
+          <p class="shead__sub">Findings become exit codes your pipeline can already read.</p>
+        </div>
+      </header>
+
+      <div class="ci__grid">
+        <div>
+          <h3>Exit codes</h3>
+          <table class="codes">
+            <caption class="visually-hidden">git-doctor exit codes and their meanings</caption>
+            <thead>
+              <tr><th scope="col">Code</th><th scope="col">Meaning</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code class="code code--ok">0</code></td>
+                <td>no findings at or above <code>--fail-on</code></td>
+              </tr>
+              <tr>
+                <td><code class="code code--warn">1</code></td>
+                <td>findings at or above <code>--fail-on</code></td>
+              </tr>
+              <tr>
+                <td><code class="code code--err">2</code></td>
+                <td>fatal error, or at least one check failed</td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="ci__note">$? decides the build — nothing else to wire up.</p>
+        </div>
+
+        <div>
+          <h3>GitHub Actions</h3>
+          <div class="term">
+            <div class="term__bar">
+              <span>Workflow step</span>
+              <button class="copy copy--dark" type="button" data-copy="- name: Diagnose repository&#10;  run: npx git-doctor --fail-on high">
+                <span class="copy__label">Copy</span>
+              </button>
+            </div>
+            <pre class="term__pre"><span class="yaml-key">- name:</span> Diagnose repository
+  <span class="yaml-key">run:</span> <span class="yaml-run">npx git-doctor --fail-on high</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 04 · USAGE ============ -->
+  <section id="usage" class="section section--dark usage" aria-labelledby="usage-title">
+    <div class="wrap">
+      <header class="shead">
+        <span class="shead__no" aria-hidden="true">04</span>
+        <div class="shead__body">
+          <h2 id="usage-title">Usage</h2>
+          <p class="shead__sub">The commands worth remembering, the flags worth knowing.</p>
+        </div>
+      </header>
+
+      <div class="term usage__term">
+        <div class="term__bar"><span>terminal</span><span>bash</span></div>
+        <pre class="term__pre"><span class="prompt">$</span> git-doctor path/to/repo --fail-on high
+<span class="term__out">2 findings (1 medium, 1 info) from 10 checks in 2.08s</span>
+
+<span class="prompt">$</span> git-doctor --json | jq '.findings[].severity'
+
+<span class="prompt">$</span> git-doctor --checks secrets,large-files --history 0</pre>
+      </div>
+
+      <div class="usage__grid">
+        <div>
+          <h3>Options worth knowing</h3>
+          <dl class="flags">
+            <div>
+              <dt>--json</dt>
+              <dd>machine-readable report, for CI</dd>
+            </div>
+            <div>
+              <dt>--checks &lt;ids&gt;</dt>
+              <dd>run only the listed checks <span class="term__out">(default: all)</span></dd>
+            </div>
+            <div>
+              <dt>--skip &lt;ids&gt;</dt>
+              <dd>skip the listed checks <span class="term__out">(default: none)</span></dd>
+            </div>
+            <div>
+              <dt>--history &lt;n&gt;</dt>
+              <dd>commits to scan for secrets <span class="term__out">(default: 200, 0 = full history)</span></dd>
+            </div>
+            <div>
+              <dt>--fail-on &lt;level&gt;</dt>
+              <dd>severity that makes the command exit 1 <span class="term__out">(default: high)</span></dd>
+            </div>
+            <div>
+              <dt>-v, --verbose</dt>
+              <dd>also show the checks that passed</dd>
+            </div>
+            <div>
+              <dt>-q, --quiet</dt>
+              <dd>no output, exit code only</dd>
+            </div>
+            <div>
+              <dt>--no-color</dt>
+              <dd>disable colors</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div>
+          <h3>.gitdoctorignore</h3>
+          <pre class="rules">test/**            # any check: matching paths
+secrets            # every finding of one check
+secrets:test/**    # one check: matching paths</pre>
+          <p class="usage__note">Some findings are deliberate. Accepted findings stop affecting the exit code — they are still counted and reported as hidden. Use <code>--no-ignore</code> to see everything.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap footer__grid">
+    <div>
+      <p class="wordmark">
+        <svg width="24" height="24" viewBox="0 0 32 32" aria-hidden="true">
+          <rect x="1.5" y="1.5" width="29" height="29" rx="6" fill="none" stroke="currentColor" stroke-width="2.5"/>
+          <path d="M16 8v16M8 16h16" stroke="#c0281f" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+        <span>git-doctor</span>
+      </p>
+      <p class="footer__meta">MIT License · version 0.1.0</p>
+    </div>
+    <div class="footer__road">
+      <h2>Roadmap</h2>
+      <p><code>fix --safe</code>, Homebrew / Scoop / Winget packages, VS Code extension.</p>
+    </div>
+    <div class="footer__links">
+      <a href="https://github.com/haileamlakwalelige/git_doctor">github.com/haileamlakwalelige/git_doctor&nbsp;↗</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var status = document.getElementById('copy-status');
+
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  function announce(btn, ok) {
+    var label = btn.querySelector('.copy__label');
+    if (!ok) {
+      if (status) status.textContent = 'Copy failed — select the text manually.';
+      return;
+    }
+    btn.classList.add('is-copied');
+    if (label) label.textContent = 'Copied';
+    if (status) status.textContent = 'Copied to clipboard';
+    window.setTimeout(function () {
+      btn.classList.remove('is-copied');
+      if (label) label.textContent = 'Copy';
+      if (status) status.textContent = '';
+    }, 1800);
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-copy]'), function (btn) {
+    btn.addEventListener('click', function () {
+      var text = btn.getAttribute('data-copy');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          announce(btn, true);
+        }, function () {
+          announce(btn, fallbackCopy(text));
+        });
+      } else {
+        announce(btn, fallbackCopy(text));
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>
+
+
+
+
