@@ -2,6 +2,7 @@ import { execFileSync, type ExecFileSyncOptions } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
+import type { Finding } from '../src/types.js';
 
 const tempDirs: string[] = [];
 
@@ -72,10 +73,10 @@ export function commitAll(dir: string, message: string, extraEnv: NodeJS.Process
   git(dir, ['commit', '-m', message], extraEnv);
 }
 
-export function findFinding(report: { findings: { id: string }[] }, id: string) {
+export function findFinding(report: { findings: Finding[] }, id: string): Finding | undefined {
   return report.findings.find((finding) => finding.id === id);
 }
 
-export function findingIds(report: { findings: { id: string }[] }): string[] {
+export function findingIds(report: { findings: Finding[] }): string[] {
   return report.findings.map((finding) => finding.id);
 }

@@ -44,6 +44,8 @@ interface CliOptions {
   color: boolean;
 }
 
+let paintError = (text: string): string => text;
+
 function listChecks(): void {
   const width = Math.max(...ALL_CHECKS.map((check) => check.meta.id.length));
   process.stdout.write('Available checks:\n\n');
@@ -109,6 +111,7 @@ Exit codes:
 
   if (!options.quiet) {
     const useColor = options.color && !process.env.NO_COLOR;
+    paintError = useColor ? (text: string) => pc.red(text) : (text: string) => text;
     const output = options.json
       ? renderJson(report)
       : renderText(report, { color: useColor, verbose: Boolean(options.verbose) });
@@ -124,11 +127,11 @@ main()
   })
   .catch((error: unknown) => {
     if (error instanceof GitDoctorError) {
-      process.stderr.write(pc.red('git-doctor: ') + error.message + '\n');
+      process.stderr.write(paintError('git-doctor: ') + error.message + '\n');
       process.exitCode = error.exitCode;
       return;
     }
     const message = error instanceof Error ? error.message : String(error);
-    process.stderr.write(pc.red('git-doctor: ') + message + '\n');
+    process.stderr.write(paintError('git-doctor: ') + message + '\n');
     process.exitCode = 2;
   });

@@ -49,39 +49,37 @@ export const repoCheck: Check = {
       ctx.git(['rev-parse', '-q', '--verify', 'HEAD']),
     ]);
 
-    if (!symbolic.ok) {
-      if (verify.ok) {
-        const sha = verify.stdout.trim();
-        const nameRev = await ctx.git(['name-rev', '--name-only', 'HEAD']);
-        const ref = nameRev.ok ? nameRev.stdout.trim() : '';
-        const location = ref && ref !== 'undefined' ? ` (${ref})` : '';
-        findings.push({
-          id: 'detached-head',
-          severity: 'high',
-          title: `HEAD is detached at ${sha.slice(0, 8)}${location}`,
-          details: [
-            'Commits made while detached are not on any branch and are easy to lose.',
-          ],
-          actions: [
-            {
-              title: 'Keep the current commits on a branch',
-              commands: [`git switch -c <new-branch>`],
-            },
-            {
-              title: 'Or return to the branch you detached from',
-              commands: ['git switch <branch>'],
-            },
-          ],
-          data: { sha },
-        });
-      } else {
-        findings.push({
-          id: 'unborn-head',
-          severity: 'info',
-          title: 'Repository has no commits yet',
-          details: ['HEAD points at a branch that does not exist yet (unborn branch).'],
-        });
-      }
+    if (!symbolic.ok && verify.ok) {
+      const sha = verify.stdout.trim();
+      const nameRev = await ctx.git(['name-rev', '--name-only', 'HEAD']);
+      const ref = nameRev.ok ? nameRev.stdout.trim() : '';
+      const location = ref && ref !== 'undefined' ? ' (' + ref + ')' : '';
+      findings.push({
+        id: 'detached-head',
+        severity: 'high',
+        title: 'HEAD is detached at ' + sha.slice(0, 8) + location,
+        details: ['Commits made while detached are not on any branch and are easy to lose.'],
+        actions: [
+          { title: 'Keep the current commits on a branch', commands: ['git switch -c <new-branch>'] },
+          { title: 'Or return to the branch you detached from', commands: ['git switch <branch>'] },
+        ],
+        data: { sha },
+      });
+    } else if (symbolic.ok && !verify.ok) {
+      findings.push({
+        id: 'unborn-head',
+        severity: 'info',
+        title: 'Repository has no commits yet',
+        details: ['HEAD points at branch "' + symbolic.stdout.trim() + '" which does not exist yet.'],
+      });
+    } else if (!symbolic.ok && !verify.ok) {
+      findings.push({
+        id: 'broken-head',
+        severity: 'high',
+        title: 'HEAD does not resolve to anything',
+        details: ['The repository has neither a symbolic ref nor a readable commit at HEAD.'],
+        actions: [{ title: 'Point HEAD at a branch', commands: ['git symbolic-ref HEAD refs/heads/main'] }],
+      });
     }
 
     const unmerged = await unmergedPaths(ctx.git);

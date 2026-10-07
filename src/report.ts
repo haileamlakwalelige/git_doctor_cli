@@ -70,7 +70,7 @@ function actionBlock(actions: RecommendedAction[], color: boolean): string[] {
   if (actions.length === 0) return [];
   const lines = ['', paint('Recommended actions', pc.bold, color), ''];
   actions.forEach((action, index) => {
-    lines.push('  ' + pc.bold(String(index + 1) + '.') + ' ' + action.title);
+    lines.push('  ' + paint(String(index + 1) + '.', pc.bold, color) + ' ' + action.title);
     for (const command of action.commands ?? []) {
       lines.push('       ' + paint(command, pc.cyan, color));
     }
@@ -127,6 +127,7 @@ function summaryLine(report: Report, color: boolean): string {
 export function renderText(report: Report, options: RenderOptions): string {
   const color = options.color;
   const lines: string[] = [headLine(report, color)];
+  const findings = sortFindings(report.findings);
 
   const failures = report.checks.filter((check) => check.status === 'failed');
 
@@ -140,9 +141,9 @@ export function renderText(report: Report, options: RenderOptions): string {
     }
   }
 
-  if (report.findings.length > 0) {
+  if (findings.length > 0) {
     lines.push('');
-    for (const finding of report.findings) {
+    for (const finding of findings) {
       lines.push(...findingBlock(finding, color));
     }
   }
@@ -154,7 +155,7 @@ export function renderText(report: Report, options: RenderOptions): string {
     }
   }
 
-  lines.push(...actionBlock(collectActions(report.findings), color));
+  lines.push(...actionBlock(collectActions(findings), color));
   lines.push(paint(summaryLine(report, color), pc.bold, color));
   return lines.join('\n');
 }
