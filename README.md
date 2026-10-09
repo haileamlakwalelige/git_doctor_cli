@@ -1,14 +1,56 @@
-# Git Doctor
+<h1 align="center">git-doctor-cli</h1>
 
-**Diagnose broken and confusing Git repositories.** Like ESLint for your Git repo.
+<p align="center">
+  <strong>Diagnose broken and confusing Git repositories.</strong><br>
+  Like ESLint for your Git repo.
+</p>
 
-`git-doctor-cli` inspects a repository and reports what is wrong — with concrete commands to fix it.
+<p align="center">
+  Read-only · Runs locally · No telemetry · MIT
+</p>
 
-**npm:** https://www.npmjs.com/package/git-doctor-cli · **site:** https://haileamlakwalelige.github.io/git_doctor_cli/
+<p align="center">
+  <a href="https://www.npmjs.com/package/git-doctor-cli">npm</a> ·
+  <a href="https://haileamlakwalelige.github.io/git_doctor_cli/">website</a> ·
+  <a href="https://github.com/haileamlakwalelige/git_doctor_cli">GitHub</a>
+</p>
 
+---
+
+`git-doctor-cli` inspects a Git repository and reports what is wrong — secrets committed in history, lost commits, stale branches, oversized files, unfinished operations — and hands you the exact commands that fix each one.
+
+## Contents
+
+- [Install](#install)
+- [Quick start](#quick-start)
+- [Usage](#usage)
+- [The 10 checks](#the-10-checks)
+- [Ignoring findings you accept](#ignoring-findings-you-accept)
+- [Use it as a library](#use-it-as-a-library)
+- [Development](#development)
+- [Roadmap](#roadmap)
+- [License](#license)
+
+## Install
+
+```bash
+npm install -g git-doctor-cli
 ```
-Git Doctor v0.1.0
-C:\projects\my-app (branch main, c9ec4ab2)
+
+Installs the `git-doctor-cli` command — `git-doctor` works as a short alias.
+Requires **Node.js 20+** and **git** on your PATH.
+
+## Quick start
+
+```bash
+git-doctor-cli                 # the repository you are in
+git-doctor-cli path/to/repo    # any other repository
+git-doctor-cli --list-checks   # print the ten checks and exit
+```
+
+```text
+Git Doctor v0.1.2
+~/projects/my-app (branch main, c9ec4ab2)
 
   ✖ 1 secret detected in previous commits
        - GitHub token: ghp_ab****** (38 chars) (first in 2c544284, src/config.js)
@@ -23,7 +65,7 @@ C:\projects\my-app (branch main, c9ec4ab2)
 Recommended actions
 
   1. Rotate the exposed credential
-       Revoke and regenerate them in the provider dashboard first - treat them as compromised.
+       Revoke and regenerate them in the provider dashboard first — treat them as compromised.
   2. Inspect the 1 dangling commit
        git fsck --lost-found
        git show <sha>
@@ -33,26 +75,17 @@ Recommended actions
 8 findings (1 critical, 2 high, 2 medium, 1 low, 2 info) from 10 checks in 1.62s
 ```
 
-Everything runs **locally**. No server, no telemetry, and your repository never leaves your machine.
-
-## Install
-
-```bash
-npm install -g git-doctor-cli
-```
-
-The package installs the `git-doctor-cli` command, with `git-doctor` as a short alias.
-
-Requires Node.js 20+ and `git` on your PATH.
+> **Safe by default.** Everything runs locally — no server, no telemetry, and your
+> repository never leaves your machine. Secret values are redacted in all output,
+> text and JSON, so reports are safe to share.
 
 ## Usage
 
 ```bash
-git-doctor-cli               # inspect the repository in the current directory
-git-doctor-cli path/to/repo  # inspect another repository
-git-doctor-cli --json        # machine-readable report (for CI)
-git-doctor-cli -v            # also show the checks that passed
-git-doctor-cli --list-checks # what can be checked
+git-doctor-cli --json                     # machine-readable report (for CI)
+git-doctor-cli -v                         # also show the checks that passed
+git-doctor-cli --fail-on medium           # stricter gate
+git-doctor-cli --checks secrets,large-files --history 0
 ```
 
 ### Options
@@ -80,11 +113,29 @@ git-doctor-cli --list-checks # what can be checked
 | `1` | findings at or above `--fail-on` |
 | `2` | fatal error, or at least one check failed |
 
-This makes it usable as a CI gate:
+Which makes it a drop-in CI gate:
 
 ```yaml
 - run: npx git-doctor-cli --fail-on high
 ```
+
+## The 10 checks
+
+| Check | What it finds |
+| --- | --- |
+| `repo` | detached HEAD, unfinished merge/rebase/cherry-pick/bisect, unresolved conflicts, uncommitted changes |
+| `dangling` | commits unreachable from every branch (lost after a reset, rebase or deleted branch) |
+| `branches` | branches with unmerged work, stale merged branches, branches tracking deleted remotes, missing upstream |
+| `sync` | branches ahead of / behind their upstream, unpushed commits |
+| `large-files` | oversized blobs anywhere in history |
+| `secrets` | GitHub/AWS/Slack/OpenAI/Google/Stripe/npm tokens, private keys, generic embedded credentials |
+| `ignored-tracked` | files that are committed *and* matched by `.gitignore` (`.env`, keys, …) |
+| `config` | missing `user.name`/`user.email`, credentials embedded in remote URLs, missing remotes |
+| `submodules` | uninitialized, out-of-date or conflicted submodules, gitlinks without `.gitmodules` |
+| `stash` | stashes you may have forgotten |
+
+Every finding comes with concrete commands to run, and `git-doctor-cli` never
+modifies your repository — it is strictly read-only.
 
 ## Ignoring findings you accept
 
@@ -107,26 +158,6 @@ branch and value a finding carries (`.env`, `assets/big.psd`, `main`, …).
 Use `--no-ignore` to see everything, or `--ignore-file <path>` to point at
 another file. The library equivalent is `diagnose(path, { ignore: [...] })`.
 
-## Checks
-
-| Check | What it finds |
-| --- | --- |
-| `repo` | detached HEAD, unfinished merge/rebase/cherry-pick/bisect, unresolved conflicts, uncommitted changes |
-| `dangling` | commits unreachable from every branch (lost after a reset, rebase or deleted branch) |
-| `branches` | branches with unmerged work, stale merged branches, branches tracking deleted remotes, missing upstream |
-| `sync` | branches ahead of / behind their upstream, unpushed commits |
-| `large-files` | oversized blobs anywhere in history |
-| `secrets` | GitHub/AWS/Slack/OpenAI/Google/Stripe/npm tokens, private keys, generic embedded credentials |
-| `ignored-tracked` | files that are committed *and* matched by `.gitignore` (`.env`, keys, …) |
-| `config` | missing `user.name`/`user.email`, credentials embedded in remote URLs, missing remotes |
-| `submodules` | uninitialized, out-of-date or conflicted submodules, gitlinks without `.gitmodules` |
-| `stash` | stashes you may have forgotten |
-
-Every finding comes with concrete commands to run. Secret values are redacted in
-all output — text and JSON — so reports are safe to share.
-
-`git-doctor-cli` is **read-only**: it never modifies your repository.
-
 ## Use it as a library
 
 ```ts
@@ -137,6 +168,9 @@ console.log(renderText(report, { color: true, verbose: false }));
 ```
 
 ## Development
+
+<details>
+<summary>Build, lint and test</summary>
 
 ```bash
 npm install
@@ -150,12 +184,14 @@ Tests build real repositories in a temp directory (detached HEADs, unfinished
 merges, dangling commits, secrets, oversized files) and assert what the tool
 reports.
 
+</details>
+
 ## Roadmap
 
 - `git-doctor-cli fix --safe` — apply only reversible fixes, behind a backup ref
-- pre-commit / CI reporters and a `--fail-on` profile per team
+- pre-commit hooks, CI reporters and per-team `--fail-on` profiles
 - Homebrew, Scoop and Winget packages
-- VS Code extension and a documentation site
+- VS Code extension
 
 ## License
 
