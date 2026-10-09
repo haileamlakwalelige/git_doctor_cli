@@ -486,6 +486,27 @@ code:not(pre code){
   margin-top:1.1rem;font-family:var(--mono);font-size:.8rem;color:var(--ink-soft);
 }
 
+/* ---------- command reference ---------- */
+.cmds-scroll{overflow-x:auto;margin-top:2.3rem;padding-bottom:3px}
+.cmds{width:100%;border-collapse:collapse;background:var(--card);border:1.5px solid var(--ink);box-shadow:5px 5px 0 rgba(21,22,26,.09)}
+.cmds thead th{
+  font-family:var(--mono);font-size:.7rem;font-weight:600;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);
+  background:rgba(21,22,26,.04);
+}
+.cmds thead th,.cmds td{padding:.8rem 1.1rem;text-align:left;border-bottom:1px solid var(--rule);vertical-align:top}
+.cmds__group th{
+  padding:.55rem 1.1rem;border-bottom:1.5px solid var(--ink);border-top:1.5px solid var(--ink);
+  font-family:var(--mono);font-size:.72rem;font-weight:600;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--amber-ink);
+  background:rgba(201,122,16,.1);
+}
+.cmds tbody tr:last-child td{border-bottom:none}
+.cmds__cmd{white-space:nowrap;font-size:.86rem}
+.cmds__job{font-size:.95rem;line-height:1.55}
+.cmds__job code{font-size:.86em}
+.cmds-note{margin-top:1.3rem;font-family:var(--mono);font-size:.8rem;line-height:1.7;color:var(--ink-soft)}
+
 /* ---------- terminal ---------- */
 .term{
   background:var(--dark);
@@ -669,6 +690,7 @@ code:not(pre code){
   .flags{grid-template-columns:minmax(0,1fr)}
   .footer__grid{grid-template-columns:1fr;gap:1.7rem}
   .footer__links{text-align:left}
+  .cmds__cmd{white-space:normal;overflow-wrap:anywhere}
   .shead{flex-direction:column;align-items:flex-start;gap:.8rem}
 }
 @media (max-width:560px){
@@ -684,6 +706,8 @@ code:not(pre code){
   .report__slip .report__out{font-size:.66rem}
   .term__pre{font-size:.74rem;padding:.9rem 1rem}
   .rules{font-size:.7rem;padding:.85rem .9rem}
+  .cmds thead th,.cmds td{padding:.7rem .85rem}
+  .cmds__group th{padding:.5rem .85rem}
   .safe__item{padding-bottom:1.4rem}
   .cta-row .btn{flex:1 1 100%;justify-content:center}
 }
@@ -709,7 +733,8 @@ code:not(pre code){
         <li><a href="#checks" aria-label="01 Checks"><span class="nav__no">01</span> <span class="nav__word">Checks</span></a></li>
         <li><a href="#safe" aria-label="02 Safety"><span class="nav__no">02</span> <span class="nav__word">Safety</span></a></li>
         <li><a href="#ci" aria-label="03 CI"><span class="nav__no">03</span> <span class="nav__word">CI</span></a></li>
-        <li><a href="#usage" aria-label="04 Usage"><span class="nav__no">04</span> <span class="nav__word">Usage</span></a></li>
+        <li><a href="#cmds" aria-label="04 Commands"><span class="nav__no">04</span> <span class="nav__word">Commands</span></a></li>
+        <li><a href="#usage" aria-label="05 Usage"><span class="nav__no">05</span> <span class="nav__word">Usage</span></a></li>
       </ul>
     </nav>
     <a class="masthead__gh" href="https://github.com/haileamlakwalelige/git_doctor_cli">GitHub&nbsp;↗</a>
@@ -982,11 +1007,104 @@ code:not(pre code){
     </div>
   </section>
 
-  <!-- ============ 04 · USAGE ============ -->
-  <section id="usage" class="section section--dark usage" aria-labelledby="usage-title">
+  <!-- ============ 04 · COMMANDS ============ -->
+  <section id="cmds" class="section section--ruled" aria-labelledby="cmds-title">
     <div class="wrap">
       <header class="shead">
         <span class="shead__no" aria-hidden="true">04</span>
+        <div class="shead__body">
+          <h2 id="cmds-title">Commands</h2>
+          <p class="shead__sub">Every command and the job it does. <code>git-doctor</code> is a short alias for all of them.</p>
+        </div>
+      </header>
+
+      <div class="cmds-scroll">
+        <table class="cmds">
+          <caption class="visually-hidden">git-doctor-cli commands and the job each one does</caption>
+          <thead>
+            <tr><th scope="col">Command</th><th scope="col">Job</th></tr>
+          </thead>
+          <tbody>
+            <tr class="cmds__group"><th scope="colgroup" colspan="2">Everyday</th></tr>
+            <tr>
+              <td class="cmds__cmd"><code>git-doctor-cli</code></td>
+              <td class="cmds__job">Scan the repository you are standing in. Every finding comes with the exact command that fixes it.</td>
+            </tr>
+            <tr>
+              <td class="cmds__cmd"><code>git-doctor-cli &lt;path&gt;</code></td>
+              <td class="cmds__job">Scan another repository by path — no need to <code>cd</code> into it first.</td>
+            </tr>
+            <tr>
+              <td class="cmds__cmd"><code>git-doctor-cli --list-checks</code></td>
+              <td class="cmds__job">Print the ten checks and what each one looks for, then exit. A good first run.</td>
+            </tr>
+            <tr>
+              <td class="cmds__cmd"><code>git-doctor-cli -v</code></td>
+              <td class="cmds__job">Also show the checks that <em>passed</em>, so you can see the whole sweep instead of only the problems.</td>
+            </tr>
+            <tr>
+              <td class="cmds__cmd"><code>git-doctor-cli --json</code></td>
+              <td class="cmds__job">Emit the same report as JSON — for CI summaries, dashboards, or piping into <code>jq</code>.</td>
+            </tr>
+            <tr>
+              <td class="cmds__cmd"><code>npx git-doctor-cli</code></td>
+              <td class="cmds__job">Run it once without installing anything (handy for a quick look at someone else's repo).</td>
+            </tr>
+
+            <tr class="cmds__group"><th scope="colgroup" colspan="2">Choose what runs</th></tr>
+            <tr>
+              <td class="cmds__cmd"><code>git-doctor-cli --checks secrets,large-files</code></td>
+              <td class="cmds__job">Run only the named checks. Faster when you are hunting one specific problem.</td>
+            </tr>
+            <tr>
+              <td class="cmds__cmd"><code>git-doctor-cli --skip secrets</code></td>
+              <td class="cmds__job">Run everything except the named checks.</td>
+            </tr>
+            <tr>
+              <td class="cmds__cmd"><code>git-doctor-cli --history 500</code></td>
+              <td class="cmds__job">How many commits back secrets and large files are scanned. Default <code>200</code>; <code>0</code> scans all history.</td>
+            </tr>
+            <tr>
+              <td class="cmds__cmd"><code>git-doctor-cli --max-file-size 100</code></td>
+              <td class="cmds__job">Blob size in MB that counts as &ldquo;large&rdquo;. Default <code>50</code>.</td>
+            </tr>
+
+            <tr class="cmds__group"><th scope="colgroup" colspan="2">Decide the exit code</th></tr>
+            <tr>
+              <td class="cmds__cmd"><code>git-doctor-cli --fail-on medium</code></td>
+              <td class="cmds__job">Lowest severity that makes the command exit <code>1</code>. Default <code>high</code> — lower it to make CI stricter.</td>
+            </tr>
+            <tr>
+              <td class="cmds__cmd"><code>git-doctor-cli -q</code></td>
+              <td class="cmds__job">Print nothing; leave the verdict to the exit code (<code>0</code> clean, <code>1</code> findings, <code>2</code> fatal). For hooks and scripts.</td>
+            </tr>
+
+            <tr class="cmds__group"><th scope="colgroup" colspan="2">Accepted findings &amp; output</th></tr>
+            <tr>
+              <td class="cmds__cmd"><code>git-doctor-cli --no-ignore</code></td>
+              <td class="cmds__job">Ignore <code>.gitdoctorignore</code> and show the findings you had accepted, including the hidden ones.</td>
+            </tr>
+            <tr>
+              <td class="cmds__cmd"><code>git-doctor-cli --ignore-file ci.txt</code></td>
+              <td class="cmds__job">Read ignore rules from a different file, so CI can use its own list.</td>
+            </tr>
+            <tr>
+              <td class="cmds__cmd"><code>git-doctor-cli --no-color</code></td>
+              <td class="cmds__job">Plain text with no ANSI colors, for logs, pipes, and captured output.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="cmds-note">Exit codes: <code>0</code> clean &middot; <code>1</code> findings at or above <code>--fail-on</code> &middot; <code>2</code> fatal — wired up in <a href="#ci">CI gate</a>.</p>
+    </div>
+  </section>
+
+  <!-- ============ 05 · USAGE ============ -->
+  <section id="usage" class="section section--dark usage" aria-labelledby="usage-title">
+    <div class="wrap">
+      <header class="shead">
+        <span class="shead__no" aria-hidden="true">05</span>
         <div class="shead__body">
           <h2 id="usage-title">Usage</h2>
           <p class="shead__sub">The commands worth remembering, the flags worth knowing.</p>
@@ -1065,7 +1183,7 @@ secrets:test/**    # one check: matching paths</pre>
         </svg>
         <span>git-doctor</span>
       </p>
-      <p class="footer__meta">MIT License · version 0.1.0</p>
+      <p class="footer__meta">MIT License · version 0.1.1</p>
     </div>
     <div class="footer__road">
       <h2>Roadmap</h2>
