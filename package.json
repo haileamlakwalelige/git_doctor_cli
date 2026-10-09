@@ -1,6 +1,6 @@
 {
   "name": "git-doctor-cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Diagnose broken and confusing Git repositories. Like ESLint for your Git repo.",
   "homepage": "https://haileamlakwalelige.github.io/git_doctor_cli/",
   "repository": {
@@ -12,12 +12,17 @@
   },
   "keywords": [
     "git",
+    "git-doctor",
+    "git-doctor-cli",
     "cli",
     "diagnostics",
     "repository",
+    "static-analysis",
     "lint",
     "secrets",
-    "recovery"
+    "large-files",
+    "recovery",
+    "devtools"
   ],
   "license": "MIT",
   "type": "module",

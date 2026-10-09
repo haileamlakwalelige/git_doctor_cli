@@ -4,6 +4,8 @@
 
 `git-doctor-cli` inspects a repository and reports what is wrong — with concrete commands to fix it.
 
+**npm:** https://www.npmjs.com/package/git-doctor-cli · **site:** https://haileamlakwalelige.github.io/git_doctor_cli/
+
 ```
 Git Doctor v0.1.0
 C:\projects\my-app (branch main, c9ec4ab2)
